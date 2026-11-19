@@ -6,9 +6,11 @@
   <title>Ohoi Kyoza — ระบบ HR & แรงงานต่างด้าว</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDK (แบบเดียวกับระบบเดิมของร้าน) -->
+  <!-- Firebase SDK (เชื่อมฐานข้อมูลเดิมของร้าน) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <!-- ไฟล์ Checklist เอกสาร -->
+  <script src="hr-checklists.js"></script>
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -16,86 +18,106 @@
       --crimson:#9B2226;--crimson-light:#AE2012;--crimson-soft:rgba(155,34,38,0.08);
       --gold:#D4A373;--gold-light:#E9C496;--jade:#588157;
       --warm-white:#FDF6EC;--cream:#F5EBDC;--ink:#3D2B1F;--ink-muted:#9B8B7F;
-      --purple:#6B5B95;--orange:#E67E22;
+      --purple:#6B5B95;--orange:#E67E22;--pink:#BE185D;
     }
-    body{font-family:'Noto Sans Thai',sans-serif;background:var(--warm-white);color:var(--ink);min-height:100vh;padding-bottom:50px;}
+    body{font-family:'Noto Sans Thai',sans-serif;background:var(--warm-white);color:var(--ink);min-height:100vh;padding-bottom:60px;}
 
     /* HEADER */
-    .header{background:linear-gradient(160deg,var(--crimson),#5A1216);padding:24px 20px;color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.15);}
-    .header-inner{max-width:1050px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+    .header{background:linear-gradient(160deg,var(--crimson),#5A1216);padding:22px 20px;color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.15);}
+    .header-inner{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
     .logo{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:#E9C496;letter-spacing:2px;}
     .logo span{color:#FFF8F0;font-weight:400;font-style:italic;}
-    .subtitle{color:rgba(255,248,240,0.8);font-size:0.82rem;margin-top:2px;}
+    .subtitle{color:rgba(255,248,240,0.85);font-size:0.82rem;margin-top:2px;}
     .btn-back{background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;padding:8px 16px;border-radius:12px;font-size:0.85rem;font-weight:600;border:1px solid rgba(255,255,255,0.25);transition:0.3s;}
     .btn-back:hover{background:var(--gold);color:var(--crimson);}
 
     /* CONTAINER */
-    .wrap{max-width:1050px;margin:26px auto;padding:0 18px;}
+    .wrap{max-width:1180px;margin:24px auto;padding:0 16px;}
 
     /* STATS CARDS */
-    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-    .stat-card{background:#fff;border-radius:18px;padding:18px;border:1px solid rgba(155,34,38,0.08);box-shadow:0 4px 14px rgba(155,34,38,0.06);border-top:4px solid var(--crimson);}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+    .stat-card{background:#fff;border-radius:18px;padding:16px 18px;border:1px solid rgba(155,34,38,0.08);box-shadow:0 4px 14px rgba(155,34,38,0.06);border-top:4px solid var(--crimson);}
     .stat-card:nth-child(2){border-top-color:var(--jade);}
     .stat-card:nth-child(3){border-top-color:var(--orange);}
     .stat-card:nth-child(4){border-top-color:#DC2626;}
     .stat-label{font-size:0.78rem;color:var(--ink-muted);font-weight:600;}
-    .stat-num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;margin-top:4px;color:var(--ink);}
+    .stat-num{font-family:'Cormorant Garamond',serif;font-size:1.95rem;font-weight:700;margin-top:4px;color:var(--ink);}
     .stat-card:nth-child(2) .stat-num{color:var(--jade);}
     .stat-card:nth-child(3) .stat-num{color:var(--orange);}
     .stat-card:nth-child(4) .stat-num{color:#DC2626;}
 
-    /* ACTION BAR */
-    .action-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+    /* ACTION BAR & FILTER */
+    .action-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
     .page-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--crimson);}
     .page-desc{font-size:0.82rem;color:var(--ink-muted);}
-    .btn-add{background:linear-gradient(135deg,var(--crimson),#AE2012);color:#fff;border:none;padding:12px 20px;border-radius:14px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(155,34,38,0.25);transition:0.3s;}
+    .btn-add{background:linear-gradient(135deg,var(--crimson),#AE2012);color:#fff;border:none;padding:11px 20px;border-radius:14px;font-family:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(155,34,38,0.25);transition:0.3s;}
     .btn-add:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(155,34,38,0.35);}
+
+    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .filter-btn{background:#fff;border:1px solid #E5D5C5;padding:7px 14px;border-radius:99px;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--ink);cursor:pointer;transition:0.2s;}
+    .filter-btn.active{background:var(--crimson);color:#fff;border-color:var(--crimson);}
 
     /* TABLE CARD */
     .card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid rgba(155,34,38,0.08);box-shadow:0 4px 16px rgba(155,34,38,0.06);}
     .table-wrap{overflow-x:auto;}
-    table{width:100%;border-collapse:collapse;text-align:left;font-size:0.85rem;}
-    th{background:var(--cream);color:var(--ink);padding:14px 16px;font-weight:700;font-size:0.78rem;border-bottom:2px solid rgba(155,34,38,0.1);white-space:nowrap;}
-    td{padding:14px 16px;border-bottom:1px solid var(--cream);vertical-align:top;}
+    table{width:100%;border-collapse:collapse;text-align:left;font-size:0.83rem;}
+    th{background:var(--cream);color:var(--ink);padding:13px 14px;font-weight:700;font-size:0.76rem;border-bottom:2px solid rgba(155,34,38,0.1);white-space:nowrap;}
+    td{padding:14px;border-bottom:1px solid var(--cream);vertical-align:top;}
     tr:hover td{background:#FFFDF9;}
 
     /* BADGES */
     .nat-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.72rem;font-weight:700;}
     .nat-mm{background:#F3E8FF;color:#6B21A8;}
     .nat-th{background:#DBEAFE;color:#1E40AF;}
-    .exp-box{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
-    .exp-date{font-size:0.78rem;font-weight:600;color:var(--ink);}
-    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:0.7rem;font-weight:700;width:fit-content;}
+    .exp-box{display:flex;flex-direction:column;gap:3px;margin-bottom:7px;}
+    .exp-date{font-size:0.76rem;font-weight:600;color:var(--ink);}
+    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:0.69rem;font-weight:700;width:fit-content;}
     .b-ok{background:#DCFCE7;color:#166534;}
     .b-warn{background:#FEF3C7;color:#92400E;}
     .b-urgent{background:#FEE2E2;color:#991B1B;}
     .b-expired{background:#DC2626;color:#fff;}
+    .b-pink{background:#FCE7F3;color:#9D174D;border:1px solid #FBCFE8;}
+    .b-info{background:#E0F2FE;color:#075985;}
 
-    .btn-sm{padding:6px 12px;border-radius:8px;border:none;font-family:inherit;font-size:0.76rem;font-weight:600;cursor:pointer;margin-right:4px;}
+    .btn-sm{padding:6px 11px;border-radius:8px;border:none;font-family:inherit;font-size:0.75rem;font-weight:600;cursor:pointer;margin-bottom:4px;display:inline-block;}
     .btn-edit{background:var(--cream);color:var(--ink);}
     .btn-edit:hover{background:var(--gold-light);}
     .btn-del{background:#FEE2E2;color:#991B1B;}
     .btn-del:hover{background:#FCA5A5;}
 
     /* MODAL */
-    .modal-overlay{position:fixed;inset:0;background:rgba(30,16,8,0.6);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;overflow-y:auto;}
+    .modal-overlay{position:fixed;inset:0;background:rgba(30,16,8,0.65);display:none;align-items:center;justify-content:center;z-index:500;padding:12px;overflow-y:auto;}
     .modal-overlay.show{display:flex;}
-    .modal{background:#fff;border-radius:22px;max-width:650px;width:100%;padding:26px;box-shadow:0 15px 40px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--cream);padding-bottom:12px;margin-bottom:18px;}
-    .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:var(--crimson);}
-    .btn-close{background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--ink-muted);}
+    .modal{background:#fff;border-radius:22px;max-width:760px;width:100%;padding:24px;box-shadow:0 15px 40px rgba(0,0,0,0.28);max-height:92vh;overflow-y:auto;}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--cream);padding-bottom:12px;margin-bottom:16px;}
+    .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:var(--crimson);}
+    .btn-close{background:none;border:none;font-size:1.7rem;cursor:pointer;color:var(--ink-muted);line-height:1;}
 
-    .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-    .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
-    .form-group{margin-bottom:12px;}
-    label{display:block;font-size:0.78rem;font-weight:600;color:var(--ink);margin-bottom:5px;}
-    input,select{width:100%;padding:10px 12px;border:1.5px solid #E5D5C5;border-radius:10px;font-family:inherit;font-size:0.88rem;background:#fff;color:var(--ink);}
-    input:focus,select:focus{outline:none;border-color:var(--crimson);}
+    /* MODAL TABS */
+    .modal-tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--cream);padding-bottom:8px;overflow-x:auto;}
+    .tab-btn{background:var(--warm-white);border:1px solid #E5D5C5;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:0.8rem;font-weight:700;color:var(--ink-muted);cursor:pointer;white-space:nowrap;}
+    .tab-btn.active{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
 
-    .migrant-box{background:var(--warm-white);border:1.5px dashed var(--gold);border-radius:14px;padding:16px;margin:14px 0;}
-    .migrant-box-title{font-size:0.88rem;font-weight:700;color:var(--crimson);margin-bottom:12px;}
+    .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+    .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+    .form-group{margin-bottom:11px;}
+    label{display:block;font-size:0.77rem;font-weight:600;color:var(--ink);margin-bottom:4px;}
+    input,select,textarea{width:100%;padding:9px 12px;border:1.5px solid #E5D5C5;border-radius:10px;font-family:inherit;font-size:0.86rem;background:#fff;color:var(--ink);}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--crimson);}
 
-    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid var(--cream);}
+    .sec-box{background:var(--warm-white);border:1.5px dashed var(--gold);border-radius:14px;padding:14px;margin-bottom:14px;}
+    .sec-title{font-size:0.86rem;font-weight:700;color:var(--crimson);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+    /* CHECKLIST UI */
+    .chk-note{background:#FEF3C7;color:#92400E;padding:9px 12px;border-radius:10px;font-size:0.78rem;font-weight:600;margin-bottom:12px;}
+    .chk-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:#fff;border:1px solid #E5D5C5;border-radius:10px;margin-bottom:8px;cursor:pointer;}
+    .chk-item input[type="checkbox"]{width:18px;height:18px;margin-top:2px;accent-color:var(--crimson);cursor:pointer;}
+    .chk-item span{font-size:0.82rem;line-height:1.4;}
+    .chk-item.done{background:#F0FDF4;border-color:#BBF7D0;text-decoration:line-through;color:var(--ink-muted);}
+
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--cream);}
     .btn-cancel{background:var(--cream);color:var(--ink);border:none;padding:10px 18px;border-radius:10px;font-family:inherit;font-weight:600;cursor:pointer;}
     .btn-save{background:var(--crimson);color:#fff;border:none;padding:10px 22px;border-radius:10px;font-family:inherit;font-weight:700;cursor:pointer;}
 
@@ -111,7 +133,7 @@
   <div class="header-inner">
     <div>
       <div class="logo">Ohoi <span>Kyoza</span></div>
-      <div class="subtitle">🪪 ระบบ HR & จัดการเอกสารแรงงานต่างด้าว (Firebase Cloud)</div>
+      <div class="subtitle">🪪 ระบบ HR & จัดการเอกสารแรงงานต่างด้าวครบวงจร (Passport • Visa • บัตรชมพู • เปลี่ยนนายจ้าง)</div>
     </div>
     <a href="index.html" class="btn-back">← กลับหน้าหลัก</a>
   </div>
@@ -141,10 +163,18 @@
   <!-- ACTION BAR -->
   <div class="action-bar">
     <div>
-      <div class="page-title">ทะเบียนพนักงาน & วันหมดอายุเอกสาร</div>
-      <div class="page-desc">ติดตามรายงานตัว 90 วัน, Work Permit, Visa, Passport และการแจ้งเข้า-ออกงาน</div>
+      <div class="page-title">ทะเบียนพนักงาน & สถานะเอกสารทางกฎหมาย</div>
+      <div class="page-desc">ติดตามรายงานตัว 90 วัน, Work Permit, Visa, บัตรชมพู (ทร.38/1), ตม.30 และนับถอยหลังเปลี่ยนนายจ้าง</div>
     </div>
     <button class="btn-add" onclick="openModal()">+ เพิ่มพนักงาน / เอกสาร</button>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">ทั้งหมด</button>
+    <button class="filter-btn" onclick="setFilter('urgent', this)">🚨 เร่งด่วน / ใกล้หมดอายุ</button>
+    <button class="filter-btn" onclick="setFilter('transfer', this)">🔄 อยู่ระหว่างเปลี่ยนนายจ้าง / รออัปเดตบัตร</button>
+    <button class="filter-btn" onclick="setFilter('migrant', this)">🌏 เฉพาะแรงงานต่างด้าว</button>
   </div>
 
   <!-- TABLE -->
@@ -153,12 +183,12 @@
       <table>
         <thead>
           <tr>
-            <th>ชื่อ-สกุล / ตำแหน่ง</th>
+            <th>ชื่อ-สกุล / ตำแหน่ง / เล่มพาสปอร์ต</th>
             <th>สัญชาติ / ค่าจ้าง</th>
-            <th>รายงานตัว 90 วัน (ตม.)</th>
-            <th>ใบอนุญาตทำงาน (Work Permit)</th>
-            <th>วีซ่า (Visa) / Passport</th>
-            <th>สถานะแจ้งการจ้างงาน</th>
+            <th>รายงานตัว 90 วัน & ตม.30</th>
+            <th>Work Permit & เปลี่ยนนายจ้าง</th>
+            <th>Visa / Passport</th>
+            <th>บัตรชมพู (ทร.38/1) & สุขภาพ</th>
             <th style="text-align:center;">จัดการ</th>
           </tr>
         </thead>
@@ -178,92 +208,217 @@
       <button class="btn-close" onclick="closeModal()">&times;</button>
     </div>
 
+    <!-- TABS -->
+    <div class="modal-tabs" id="modal-tabs-bar">
+      <button type="button" class="tab-btn active" onclick="switchTab('tab-basic', this)">1. ข้อมูลทั่วไป & เอกสารหลัก</button>
+      <button type="button" class="tab-btn" id="btn-tab-pink" onclick="switchTab('tab-pink-transfer', this)">2. บัตรชมพู & เปลี่ยนนายจ้าง</button>
+      <button type="button" class="tab-btn" id="btn-tab-chk" onclick="switchTab('tab-checklist', this)">3. Checklist เตรียมเอกสาร & ค่าใช้จ่าย</button>
+    </div>
+
     <form id="hr-form">
       <input type="hidden" id="emp-id">
 
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label>ชื่อ-สกุล หรือชื่อเล่น *</label>
-          <input type="text" id="emp-name" required placeholder="เช่น นายอ่อง (Aung)">
-        </div>
-        <div class="form-group">
-          <label>ตำแหน่งงาน *</label>
-          <select id="emp-role">
-            <option value="พนักงานครัว / ปั้นเกี๊ยว">พนักงานครัว / ปั้นเกี๊ยว</option>
-            <option value="พนักงานเสิร์ฟ / หน้าร้าน">พนักงานเสิร์ฟ / หน้าร้าน</option>
-            <option value="พนักงานล้างจาน / ทำความสะอาด">พนักงานล้างจาน / ทำความสะอาด</option>
-            <option value="ผู้จัดการร้าน">ผู้จัดการร้าน</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-grid-3">
-        <div class="form-group">
-          <label>สัญชาติ *</label>
-          <select id="emp-nationality" onchange="toggleMigrantFields()">
-            <option value="MM">🇲🇲 เมียนมา (Myanmar)</option>
-            <option value="TH">🇹🇭 ไทย (Thai)</option>
-            <option value="LA">🇱🇦 ลาว (Laos)</option>
-            <option value="KH">🇰🇭 กัมพูชา (Cambodia)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>ประเภทค่าจ้าง</label>
-          <select id="emp-wage-type">
-            <option value="รายวัน">รายวัน (บาท/วัน)</option>
-            <option value="รายเดือน">รายเดือน (บาท/เดือน)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>อัตราค่าจ้าง (บาท) *</label>
-          <input type="number" id="emp-wage" required placeholder="เช่น 400 หรือ 12000">
-        </div>
-      </div>
-
-      <!-- เฉพาะแรงงานต่างด้าว -->
-      <div class="migrant-box" id="migrant-section">
-        <div class="migrant-box-title">📋 ข้อมูลเอกสารแรงงานต่างด้าว & กำหนดต่ออายุ</div>
-        
+      <!-- TAB 1: ข้อมูลทั่วไป & เอกสารหลัก -->
+      <div class="tab-panel active" id="tab-basic">
         <div class="form-grid-2">
           <div class="form-group">
-            <label>เลขที่ Passport / CI</label>
-            <input type="text" id="doc-passport-no" placeholder="เช่น MC123456">
+            <label>ชื่อ-สกุล หรือชื่อเล่น *</label>
+            <input type="text" id="emp-name" required placeholder="เช่น นายอ่อง (Aung)">
           </div>
           <div class="form-group">
-            <label>วันหมดอายุ Passport</label>
-            <input type="date" id="doc-passport-exp">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label>วันหมดอายุ ใบอนุญาตทำงาน (Work Permit)</label>
-            <input type="date" id="doc-wp-exp">
-          </div>
-          <div class="form-group">
-            <label>วันหมดอายุ วีซ่า (Visa)</label>
-            <input type="date" id="doc-visa-exp">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label>วันครบกำหนด รายงานตัว 90 วัน (ครั้งถัดไป)</label>
-            <input type="date" id="doc-90days-exp">
-          </div>
-          <div class="form-group">
-            <label>สถานะการแจ้งเข้าทำงาน / ตม.30</label>
-            <select id="doc-compliance-status">
-              <option value="✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย">✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย</option>
-              <option value="⏳ รอแจ้งเข้าทำงาน (ภายใน 15 วัน)">⏳ รอแจ้งเข้าทำงาน (ภายใน 15 วัน)</option>
-              <option value="⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)">⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)</option>
+            <label>ตำแหน่งงาน *</label>
+            <select id="emp-role">
+              <option value="พนักงานครัว / ปั้นเกี๊ยว">พนักงานครัว / ปั้นเกี๊ยว</option>
+              <option value="พนักงานเสิร์ฟ / หน้าร้าน">พนักงานเสิร์ฟ / หน้าร้าน</option>
+              <option value="พนักงานล้างจาน / ทำความสะอาด">พนักงานล้างจาน / ทำความสะอาด</option>
+              <option value="ผู้จัดการร้าน">ผู้จัดการร้าน</option>
             </select>
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label>ลิงก์รูปถ่ายเอกสาร (Google Drive / Line Album)</label>
-          <input type="url" id="doc-drive-link" placeholder="https://drive.google.com/...">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>สัญชาติ *</label>
+            <select id="emp-nationality" onchange="toggleMigrantFields()">
+              <option value="MM">🇲🇲 เมียนมา (Myanmar)</option>
+              <option value="TH">🇹🇭 ไทย (Thai)</option>
+              <option value="LA">🇱🇦 ลาว (Laos)</option>
+              <option value="KH">🇰🇭 กัมพูชา (Cambodia)</option>
+              <option value="VN">🇻🇳 เวียดนาม (Vietnam)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ประเภทค่าจ้าง</label>
+            <select id="emp-wage-type">
+              <option value="รายวัน">รายวัน (บาท/วัน)</option>
+              <option value="รายเดือน">รายเดือน (บาท/เดือน)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>อัตราค่าจ้าง (บาท) *</label>
+            <input type="number" id="emp-wage" required placeholder="เช่น 400 หรือ 12000">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>วันเริ่มทำงานที่ร้าน Ohoi Kyoza</label>
+            <input type="date" id="emp-start-date">
+          </div>
+          <div class="form-group">
+            <label>เบอร์โทรศัพท์ติดต่อ</label>
+            <input type="tel" id="emp-phone" placeholder="08X-XXX-XXXX">
+          </div>
+        </div>
+
+        <!-- เฉพาะแรงงานต่างด้าว -->
+        <div class="sec-box" id="migrant-section">
+          <div class="sec-title">🛂 เอกสารหลัก (Passport • Visa • Work Permit • 90 วัน)</div>
+          
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>เลขที่ Passport / CI</label>
+              <input type="text" id="doc-passport-no" placeholder="เช่น MC123456">
+            </div>
+            <div class="form-group">
+              <label>วันหมดอายุ Passport</label>
+              <input type="date" id="doc-passport-exp">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>วันหมดอายุ ใบอนุญาตทำงาน (Work Permit)</label>
+              <input type="date" id="doc-wp-exp">
+            </div>
+            <div class="form-group">
+              <label>วันหมดอายุ วีซ่า (Visa)</label>
+              <input type="date" id="doc-visa-exp">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>วันครบกำหนด รายงานตัว 90 วัน (ครั้งถัดไป)</label>
+              <input type="date" id="doc-90days-exp">
+            </div>
+            <div class="form-group">
+              <label>สถานะการแจ้งเข้าทำงาน / ตม.30</label>
+              <select id="doc-compliance-status">
+                <option value="✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย">✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย</option>
+                <option value="🔄 อยู่ระหว่างยื่นเปลี่ยนนายจ้าง">🔄 อยู่ระหว่างยื่นเปลี่ยนนายจ้าง</option>
+                <option value="⏳ รอแจ้งเข้าทำงาน (ภายใน 15/30/60 วัน)">⏳ รอแจ้งเข้าทำงาน (ตามกำหนด)</option>
+                <option value="⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)">⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label>ลิงก์รูปถ่ายเอกสาร (Google Drive / Line Album)</label>
+            <input type="url" id="doc-drive-link" placeholder="https://drive.google.com/...">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: บัตรชมพู & เปลี่ยนนายจ้าง & ตม.30 -->
+      <div class="tab-panel" id="tab-pink-transfer">
+        <div class="sec-box">
+          <div class="sec-title">🪪 ข้อมูลบัตรชมพู (บัตรประจำตัวคนซึ่งไม่มีสัญชาติไทย / ทร.38/1)</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>เลขประจำตัว 13 หลัก (ขึ้นต้น 00-... / 6-...)</label>
+              <input type="text" id="pink-id-no" maxlength="17" placeholder="เช่น 00-1234-56789-01-2">
+            </div>
+            <div class="form-group">
+              <label>วันหมดอายุบัตรชมพู (ปกติรอบละ 1-2 ปี)</label>
+              <input type="date" id="pink-exp">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>ชื่อนายจ้างที่ระบุอยู่ด้านหลังบัตรชมพูปัจจุบัน *</label>
+            <select id="pink-employer-status">
+              <option value="✅ เป็นชื่อร้าน Ohoi Kyoza แล้ว">✅ เป็นชื่อร้าน Ohoi Kyoza แล้ว (เรียบร้อย)</option>
+              <option value="⚠️ ยังเป็นชื่อนายจ้างเก่า (ต้องพาไปเปลี่ยนภายใน 60 วัน)">⚠️ ยังเป็นชื่อนายจ้างเก่า (ต้องพาไปเปลี่ยนบัตรใหม่)</option>
+              <option value="🆕 ยังไม่เคยทำบัตรชมพู / รอถ่ายบัตรรอบใหม่">🆕 ยังไม่เคยทำบัตรชมพู / รอถ่ายบัตรรอบใหม่</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sec-box">
+          <div class="sec-title">🔄 ติดตามการเปลี่ยนนายจ้าง (นับถอยหลังแจ้งเข้าจัดหางาน)</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>วันที่แจ้งออกจากนายจ้างเดิม (ถ้ามี)</label>
+              <input type="date" id="transfer-quit-date">
+            </div>
+            <div class="form-group">
+              <label>ระยะเวลาที่กฎหมายกำหนดให้แจ้งเข้า</label>
+              <select id="transfer-quota-days">
+                <option value="0">ไม่ใช้ (พนักงานเดิมของร้าน)</option>
+                <option value="30">ภายใน 30 วัน (กลุ่ม MOU / ทั่วไป)</option>
+                <option value="60">ภายใน 60 วัน (กลุ่มมติ ครม.)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-box" style="margin-bottom:0;">
+          <div class="sec-title">🏥 สุขภาพ ประกัน และที่พักอาศัย (ตม.30)</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>วันหมดอายุใบรับรองแพทย์ / ประกันสุขภาพ</label>
+              <input type="date" id="health-exp">
+            </div>
+            <div class="form-group">
+              <label>วันที่แจ้งที่พัก ตม.30 ล่าสุด</label>
+              <input type="date" id="tm30-date">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>ที่อยู่หอพัก / ที่พักปัจจุบันของพนักงาน</label>
+            <input type="text" id="emp-address" placeholder="เช่น หอพักซอยบางโฉลง ...">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CHECKLIST & ค่าใช้จ่าย -->
+      <div class="tab-panel" id="tab-checklist">
+        <div class="sec-box">
+          <div class="sec-title">📋 เลือกงานเอกสารที่กำลังดำเนินการ (Checklist)</div>
+          <div class="form-group">
+            <label>ประเภทงานที่กำลังยื่นเรื่อง</label>
+            <select id="task-type" onchange="renderChecklistItems()">
+              <option value="none">✅ ปกติ (ไม่มีงานยื่นเอกสารค้างอยู่)</option>
+              <option value="change_employer">🔄 เปลี่ยนนายจ้าง (แจ้งเข้าทำงานใหม่)</option>
+              <option value="renew_visa_wp">🛂 ต่ออายุ วีซ่า (Visa) + ใบอนุญาตทำงาน</option>
+              <option value="pink_card">🪪 ทำบัตรชมพูใหม่ / เปลี่ยนชื่อนายจ้างหลังบัตร</option>
+              <option value="tm30_90days">🏠 แจ้งที่พักอาศัย (ตม.30) / รายงานตัว 90 วัน</option>
+            </select>
+          </div>
+          <div id="checklist-container"></div>
+        </div>
+
+        <div class="sec-box" style="margin-bottom:0;">
+          <div class="sec-title">📒 สถานะเล่มพาสปอร์ตตัวจริง & ค่าใช้จ่ายดำเนินการ</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>ขณะนี้เล่มพาสปอร์ตตัวจริงอยู่ที่ใคร?</label>
+              <select id="passport-holder">
+                <option value="อยู่ที่พนักงาน">อยู่ที่พนักงาน</option>
+                <option value="เก็บรักษาที่ร้าน (ตู้เซฟ)">เก็บรักษาที่ร้าน (ตู้เซฟ)</option>
+                <option value="ฝากเอเจนซี่ / นายหน้ายื่นเรื่อง">ฝากเอเจนซี่ / นายหน้ายื่นเรื่อง</option>
+                <option value="อยู่ที่ ตม. / สำนักงานจัดหางาน">อยู่ที่ ตม. / สำนักงานจัดหางาน</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ค่าใช้จ่ายดำเนินการรอบนี้ (บาท)</label>
+              <input type="number" id="doc-cost" placeholder="เช่น 6500">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>หมายเหตุ / ชื่อเอเจนซี่ / เบอร์ติดต่อตัวแทน</label>
+            <input type="text" id="doc-note" placeholder="เช่น พี่เอ๋ เอเจนซี่ 089-XXX-XXXX นัดตีวีซ่าวันศุกร์">
+          </div>
         </div>
       </div>
 
@@ -290,6 +445,8 @@ const db = firebase.database();
 const empRef = db.ref('employees');
 
 let employeesMap = {};
+let currentFilter = 'all';
+let currentCheckedState = {};
 
 // คำนวณจำนวนวันที่เหลือ
 function getDaysRemaining(dateString) {
@@ -300,9 +457,17 @@ function getDaysRemaining(dateString) {
   return Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
 }
 
+// คำนวณวันเส้นตายเปลี่ยนนายจ้าง
+function getTransferDeadline(quitDate, quotaDays) {
+  if (!quitDate || !quotaDays || Number(quotaDays) === 0) return null;
+  const d = new Date(quitDate);
+  d.setDate(d.getDate() + Number(quotaDays));
+  return d.toISOString().split('T')[0];
+}
+
 // แสดงป้ายสถานะวันหมดอายุ
 function formatExpiryBadge(dateString, label = "") {
-  if (!dateString) return `<span style="color:var(--ink-muted);font-size:0.75rem;">- ไม่ระบุ -</span>`;
+  if (!dateString) return `<span style="color:var(--ink-muted);font-size:0.74rem;">- ไม่ระบุ -</span>`;
   
   const days = getDaysRemaining(dateString);
   let cls = "b-ok";
@@ -310,7 +475,7 @@ function formatExpiryBadge(dateString, label = "") {
 
   if (days < 0) {
     cls = "b-expired";
-    text = `หมดอายุแล้ว (${Math.abs(days)} วัน)`;
+    text = `หมดอายุ (${Math.abs(days)} วัน)`;
   } else if (days <= 15) {
     cls = "b-urgent";
     text = `ด่วน! เหลือ ${days} วัน`;
@@ -327,7 +492,7 @@ function formatExpiryBadge(dateString, label = "") {
   `;
 }
 
-// โหลดข้อมูลแบบ Real-time จาก Firebase Realtime Database
+// โหลดข้อมูลแบบ Real-time จาก Firebase
 empRef.on('value', (snapshot) => {
   employeesMap = snapshot.val() || {};
   const list = Object.values(employeesMap);
@@ -338,7 +503,8 @@ empRef.on('value', (snapshot) => {
 
   list.forEach(emp => {
     if (emp.nationality !== 'TH') {
-      const dates = [emp.exp90Days, emp.expWorkPermit, emp.expVisa, emp.expPassport];
+      const transferExp = getTransferDeadline(emp.transferQuitDate, emp.transferQuotaDays);
+      const dates = [emp.exp90Days, emp.expWorkPermit, emp.expVisa, emp.expPassport, emp.pinkExp, emp.healthExp, transferExp];
       dates.forEach(d => {
         if (d) {
           const rem = getDaysRemaining(d);
@@ -355,30 +521,62 @@ empRef.on('value', (snapshot) => {
   document.getElementById('stat-warning').textContent = warnCount;
   document.getElementById('stat-urgent').textContent = urgentCount;
 
-  renderTable(list);
+  renderTable();
 }, (err) => {
   document.getElementById('employee-list').innerHTML = `<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">❌ เชื่อมต่อ Firebase ไม่สำเร็จ: ${err.message}</td></tr>`;
 });
 
+function setFilter(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
 // แสดงตาราง
-function renderTable(list) {
+function renderTable() {
   const tbody = document.getElementById('employee-list');
+  let list = Object.values(employeesMap);
+
+  if (currentFilter === 'migrant') {
+    list = list.filter(e => e.nationality !== 'TH');
+  } else if (currentFilter === 'transfer') {
+    list = list.filter(e => e.nationality !== 'TH' && (
+      (e.transferQuotaDays && Number(e.transferQuotaDays) > 0) ||
+      (e.pinkEmployerStatus && e.pinkEmployerStatus.includes('⚠️')) ||
+      (e.taskType && e.taskType !== 'none')
+    ));
+  } else if (currentFilter === 'urgent') {
+    list = list.filter(e => {
+      if (e.nationality === 'TH') return false;
+      const transferExp = getTransferDeadline(e.transferQuitDate, e.transferQuotaDays);
+      const dates = [e.exp90Days, e.expWorkPermit, e.expVisa, e.expPassport, e.pinkExp, e.healthExp, transferExp];
+      return dates.some(d => d && getDaysRemaining(d) <= 60);
+    });
+  }
+
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:35px;color:var(--ink-muted);">ยังไม่มีข้อมูลพนักงาน กดปุ่ม <strong>"+ เพิ่มพนักงาน / เอกสาร"</strong> ด้านบนเพื่อเริ่มต้น</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:35px;color:var(--ink-muted);">ไม่พบรายการพนักงานในหมวดนี้</td></tr>`;
     return;
   }
 
   tbody.innerHTML = list.map(emp => {
     const isThai = emp.nationality === 'TH';
+    const natFlags = { MM: '🇲🇲 MM', LA: '🇱🇦 LA', KH: '🇰🇭 KH', VN: '🇻🇳 VN' };
     const natHtml = isThai 
       ? `<span class="nat-badge nat-th">🇹🇭 ไทย</span>`
-      : `<span class="nat-badge nat-mm">🇲🇲 ${emp.nationality}</span>`;
+      : `<span class="nat-badge nat-mm">${natFlags[emp.nationality] || '🌏 ' + emp.nationality}</span>`;
+
+    const transferExp = getTransferDeadline(emp.transferQuitDate, emp.transferQuotaDays);
+    const holderBadge = (!isThai && emp.passportHolder && emp.passportHolder !== 'อยู่ที่พนักงาน')
+      ? `<div style="margin-top:4px;"><span class="badge b-info">📒 ${emp.passportHolder}</span></div>` : '';
 
     return `
       <tr>
         <td>
           <strong>${emp.name}</strong><br>
           <span style="font-size:0.75rem;color:var(--ink-muted);">${emp.role}</span>
+          ${holderBadge}
           ${emp.driveLink ? `<br><a href="${emp.driveLink}" target="_blank" style="font-size:0.74rem;color:var(--crimson);font-weight:600;">📁 เปิดดูรูปเอกสาร</a>` : ''}
         </td>
         <td>
@@ -386,8 +584,19 @@ function renderTable(list) {
           <span style="font-size:0.78rem;font-weight:600;">${Number(emp.wage || 0).toLocaleString()} บ.</span>
           <span style="font-size:0.72rem;color:var(--ink-muted);">(${emp.wageType})</span>
         </td>
-        <td>${isThai ? '-' : formatExpiryBadge(emp.exp90Days)}</td>
-        <td>${isThai ? '-' : formatExpiryBadge(emp.expWorkPermit)}</td>
+        <td>
+          ${isThai ? '-' : `
+            ${formatExpiryBadge(emp.exp90Days, '90 วัน')}
+            <div style="font-size:0.73rem;color:var(--ink-muted);margin-top:4px;">ตม.30: ${emp.tm30Date || 'ยังไม่ระบุ'}</div>
+          `}
+        </td>
+        <td>
+          ${isThai ? '-' : `
+            ${formatExpiryBadge(emp.expWorkPermit, 'WP')}
+            ${transferExp ? formatExpiryBadge(transferExp, 'เส้นตายแจ้งเข้า') : ''}
+            <div style="font-size:0.73rem;font-weight:600;margin-top:3px;">${emp.complianceStatus || ''}</div>
+          `}
+        </td>
         <td>
           ${isThai ? '-' : `
             ${formatExpiryBadge(emp.expVisa, 'Visa')}
@@ -395,15 +604,58 @@ function renderTable(list) {
           `}
         </td>
         <td>
-          <span style="font-size:0.78rem;font-weight:600;">${isThai ? 'พนักงานไทย' : (emp.complianceStatus || '-')}</span>
+          ${isThai ? '<span style="color:var(--ink-muted);font-size:0.75rem;">พนักงานไทย</span>' : `
+            ${emp.pinkIdNo ? `<div style="font-size:0.73rem;font-weight:700;color:var(--pink);">🪪 ${emp.pinkIdNo}</div>` : ''}
+            ${formatExpiryBadge(emp.pinkExp, 'บัตรชมพู')}
+            ${emp.pinkEmployerStatus ? `<div style="font-size:0.71rem;margin-bottom:5px;">${emp.pinkEmployerStatus}</div>` : ''}
+            ${emp.healthExp ? formatExpiryBadge(emp.healthExp, 'แพทย์/ประกัน') : ''}
+          `}
         </td>
         <td style="text-align:center;white-space:nowrap;">
-          <button class="btn-sm btn-edit" onclick="editEmployee('${emp.id}')">✏️ แก้ไข</button>
-          <button class="btn-sm btn-del" onclick="deleteEmployee('${emp.id}', '${emp.name}')">🗑️</button>
+          <button class="btn-sm btn-edit" onclick="editEmployee('${emp.id}')">✏️ แก้ไข / เช็กเอกสาร</button><br>
+          <button class="btn-sm btn-del" onclick="deleteEmployee('${emp.id}', '${emp.name}')">🗑️ ลบ</button>
         </td>
       </tr>
     `;
   }).join('');
+}
+
+// สลับแท็บใน Modal
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// แสดงรายการ Checklist ตามประเภทงาน
+function renderChecklistItems() {
+  const type = document.getElementById('task-type').value;
+  const container = document.getElementById('checklist-container');
+  const data = (window.HR_CHECKLISTS && window.HR_CHECKLISTS[type]) ? window.HR_CHECKLISTS[type] : null;
+
+  if (!data || !data.items || data.items.length === 0) {
+    container.innerHTML = `<div style="font-size:0.8rem;color:var(--ink-muted);padding:8px;">ไม่มีรายการเอกสารที่ต้องเตรียมเพิ่มเติม</div>`;
+    return;
+  }
+
+  let html = `<div class="chk-note">${data.deadlineNote}</div>`;
+  data.items.forEach((item, idx) => {
+    const key = `${type}_${idx}`;
+    const isChecked = !!currentCheckedState[key];
+    html += `
+      <label class="chk-item ${isChecked ? 'done' : ''}">
+        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckItem('${key}', this)">
+        <span>${item}</span>
+      </label>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function toggleCheckItem(key, checkbox) {
+  currentCheckedState[key] = checkbox.checked;
+  checkbox.closest('.chk-item').classList.toggle('done', checkbox.checked);
 }
 
 // บันทึกข้อมูลขึ้น Firebase
@@ -419,6 +671,10 @@ document.getElementById('hr-form').addEventListener('submit', async (e) => {
     nationality: document.getElementById('emp-nationality').value,
     wageType: document.getElementById('emp-wage-type').value,
     wage: Number(document.getElementById('emp-wage').value),
+    startDate: document.getElementById('emp-start-date').value,
+    phone: document.getElementById('emp-phone').value.trim(),
+    
+    // เอกสารหลักเดิม (รักษาชื่อฟิลด์เดิมไว้ 100%)
     passportNo: document.getElementById('doc-passport-no').value.trim(),
     expPassport: document.getElementById('doc-passport-exp').value,
     expWorkPermit: document.getElementById('doc-wp-exp').value,
@@ -426,6 +682,24 @@ document.getElementById('hr-form').addEventListener('submit', async (e) => {
     exp90Days: document.getElementById('doc-90days-exp').value,
     complianceStatus: document.getElementById('doc-compliance-status').value,
     driveLink: document.getElementById('doc-drive-link').value.trim(),
+
+    // บัตรชมพู + เปลี่ยนนายจ้าง + ตม.30 + สุขภาพ
+    pinkIdNo: document.getElementById('pink-id-no').value.trim(),
+    pinkExp: document.getElementById('pink-exp').value,
+    pinkEmployerStatus: document.getElementById('pink-employer-status').value,
+    transferQuitDate: document.getElementById('transfer-quit-date').value,
+    transferQuotaDays: document.getElementById('transfer-quota-days').value,
+    healthExp: document.getElementById('health-exp').value,
+    tm30Date: document.getElementById('tm30-date').value,
+    address: document.getElementById('emp-address').value.trim(),
+
+    // Checklist + เล่มพาสปอร์ต + ค่าใช้จ่าย
+    taskType: document.getElementById('task-type').value,
+    checkedItems: currentCheckedState,
+    passportHolder: document.getElementById('passport-holder').value,
+    docCost: Number(document.getElementById('doc-cost').value || 0),
+    docNote: document.getElementById('doc-note').value.trim(),
+
     updatedAt: new Date().toISOString()
   };
 
@@ -441,8 +715,11 @@ document.getElementById('hr-form').addEventListener('submit', async (e) => {
 function openModal() {
   document.getElementById('hr-form').reset();
   document.getElementById('emp-id').value = '';
+  currentCheckedState = {};
   document.getElementById('modal-title').textContent = 'เพิ่มข้อมูลพนักงานและเอกสาร';
+  switchTab('tab-basic', document.querySelector('.tab-btn'));
   toggleMigrantFields();
+  renderChecklistItems();
   document.getElementById('hr-modal').classList.add('show');
 }
 
@@ -451,8 +728,10 @@ function closeModal() {
 }
 
 function toggleMigrantFields() {
-  const nat = document.getElementById('emp-nationality').value;
-  document.getElementById('migrant-section').style.display = (nat === 'TH') ? 'none' : 'block';
+  const isThai = document.getElementById('emp-nationality').value === 'TH';
+  document.getElementById('migrant-section').style.display = isThai ? 'none' : 'block';
+  document.getElementById('btn-tab-pink').style.display = isThai ? 'none' : 'inline-block';
+  document.getElementById('btn-tab-chk').style.display = isThai ? 'none' : 'inline-block';
 }
 
 function editEmployee(id) {
@@ -465,6 +744,9 @@ function editEmployee(id) {
   document.getElementById('emp-nationality').value = emp.nationality || 'MM';
   document.getElementById('emp-wage-type').value = emp.wageType || 'รายวัน';
   document.getElementById('emp-wage').value = emp.wage || '';
+  document.getElementById('emp-start-date').value = emp.startDate || '';
+  document.getElementById('emp-phone').value = emp.phone || '';
+
   document.getElementById('doc-passport-no').value = emp.passportNo || '';
   document.getElementById('doc-passport-exp').value = emp.expPassport || '';
   document.getElementById('doc-wp-exp').value = emp.expWorkPermit || '';
@@ -473,8 +755,25 @@ function editEmployee(id) {
   document.getElementById('doc-compliance-status').value = emp.complianceStatus || '✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย';
   document.getElementById('doc-drive-link').value = emp.driveLink || '';
 
-  document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล: ' + emp.name;
+  document.getElementById('pink-id-no').value = emp.pinkIdNo || '';
+  document.getElementById('pink-exp').value = emp.pinkExp || '';
+  document.getElementById('pink-employer-status').value = emp.pinkEmployerStatus || '✅ เป็นชื่อร้าน Ohoi Kyoza แล้ว';
+  document.getElementById('transfer-quit-date').value = emp.transferQuitDate || '';
+  document.getElementById('transfer-quota-days').value = emp.transferQuotaDays || '0';
+  document.getElementById('health-exp').value = emp.healthExp || '';
+  document.getElementById('tm30-date').value = emp.tm30Date || '';
+  document.getElementById('emp-address').value = emp.address || '';
+
+  document.getElementById('task-type').value = emp.taskType || 'none';
+  currentCheckedState = emp.checkedItems || {};
+  document.getElementById('passport-holder').value = emp.passportHolder || 'อยู่ที่พนักงาน';
+  document.getElementById('doc-cost').value = emp.docCost || '';
+  document.getElementById('doc-note').value = emp.docNote || '';
+
+  document.getElementById('modal-title').textContent = 'แก้ไข / เช็กเอกสาร: ' + emp.name;
+  switchTab('tab-basic', document.querySelector('.tab-btn'));
   toggleMigrantFields();
+  renderChecklistItems();
   document.getElementById('hr-modal').classList.add('show');
 }
 
