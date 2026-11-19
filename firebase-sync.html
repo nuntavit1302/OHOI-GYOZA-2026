@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ohoi Kyoza — Firebase Fix Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--crimson:#9B2226;--gold:#D4A373;--jade:#588157;--warm-white:#FDF6EC;--cream:#F5EBDC;--ink:#3D2B1F;--ink-muted:#9B8B7F;}
+body{font-family:'Noto Sans Thai',sans-serif;background:var(--warm-white);color:var(--ink);min-height:100vh;}
+.header{background:linear-gradient(160deg,var(--crimson),#5A1216);padding:28px 20px;text-align:center;}
+.logo{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:#E9C496;letter-spacing:3px;}
+.logo span{color:#FFF8F0;font-weight:400;font-style:italic;}
+.subtitle{color:rgba(255,248,240,0.7);font-size:0.85rem;margin-top:6px;}
+.wrap{max-width:680px;margin:28px auto;padding:0 16px 60px;}
+.card{background:#fff;border-radius:20px;padding:24px;margin-bottom:18px;border:1px solid rgba(155,34,38,0.08);box-shadow:0 2px 14px rgba(155,34,38,0.07);}
+.card-title{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--crimson);margin-bottom:14px;}
+.status-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--warm-white);border-radius:10px;margin-bottom:8px;}
+.status-label{font-size:0.85rem;color:var(--ink-muted);}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:700;}
+.badge.ok{background:#D8F3DC;color:#1B4332;}
+.badge.warn{background:#FFF3CD;color:#856404;}
+.badge.err{background:#F8D7DA;color:#721C24;}
+.btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:all .3s;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:linear-gradient(135deg,var(--crimson),#AE2012);color:#fff;}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 18px rgba(155,34,38,0.35);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-jade{background:linear-gradient(135deg,var(--jade),#3A6B39);color:#fff;}
+.btn-jade:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 18px rgba(88,129,87,0.35);}
+.btn-jade:disabled{opacity:.5;cursor:not-allowed;}
+.btn-gray{background:var(--cream);color:var(--ink-muted);}
+.progress-wrap{display:none;margin-bottom:14px;}
+.progress-bar{height:8px;background:#e8d5c2;border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold));border-radius:99px;width:0%;transition:width .4s;}
+.progress-text{font-size:0.8rem;color:var(--ink-muted);margin-top:6px;text-align:center;}
+.log-box{background:#1E1008;border-radius:12px;padding:14px;font-family:monospace;font-size:0.78rem;color:#E9C496;max-height:220px;overflow-y:auto;line-height:1.8;}
+.log-ok{color:#86EFAC;} .log-warn{color:#FCD34D;} .log-err{color:#FCA5A5;} .log-info{color:#93C5FD;}
+.preview-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+.preview-table th{background:var(--crimson);color:#fff;padding:8px 10px;text-align:left;}
+.preview-table td{padding:7px 10px;border-bottom:1px solid var(--cream);}
+.preview-table tr:hover td{background:var(--warm-white);}
+.cat-pill{padding:2px 8px;border-radius:99px;background:var(--cream);font-size:0.72rem;}
+.avail-ok{color:#1B4332;font-weight:700;} .avail-no{color:#721C24;font-weight:700;}
+.empty{text-align:center;padding:24px;color:var(--ink-muted);}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">Ohoi <span>Kyoza</span></div>
+  <div class="subtitle">🔥 Firebase Fix Tool — จัดการเมนูโดยตรง</div>
+</div>
+
+<div class="wrap">
+
+  <!-- STATUS -->
+  <div class="card">
+    <div class="card-title">📊 สถานะ Firebase</div>
+    <div class="status-item"><span class="status-label">🔥 Firebase Connection</span><span id="fb-conn">กำลังตรวจ...</span></div>
+    <div class="status-item"><span class="status-label">☁️ เมนูใน Firebase ทั้งหมด</span><span id="fb-total">กำลังโหลด...</span></div>
+    <div class="status-item"><span class="status-label">✅ พร้อมขาย (available: true)</span><span id="fb-avail">—</span></div>
+    <div class="status-item"><span class="status-label">❌ ไม่พร้อมขาย (available: false)</span><span id="fb-unavail">—</span></div>
+  </div>
+
+  <!-- FIX ACTIONS -->
+  <div class="card">
+    <div class="card-title">⚡ แก้ไขด่วน</div>
+    <button class="btn btn-primary" id="btn-fix-all" onclick="fixAvailableAll()">
+      ✅ เปิดขาย (available=true) เมนูทุกรายการ
+    </button>
+    <button class="btn btn-jade" id="btn-fix-cat" onclick="fixCategories()">
+      🏷️ แก้ชื่อ Category ให้ตรง
+    </button>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text"></div>
+    </div>
+    <button class="btn btn-gray" onclick="clearLog()">🗑️ ล้าง Log</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="card">
+    <div class="card-title">📋 Log</div>
+    <div class="log-box" id="log-box"><span class="log-info">► เริ่มต้น...</span><br></div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="card">
+    <div class="card-title">🍽️ เมนูทั้งหมดใน Firebase</div>
+    <div id="preview-area"><div class="empty">⏳ กำลังโหลด...</div></div>
+  </div>
+
+</div>
+
+<script>
+// Firebase init
+const _app = firebase.apps.length ? firebase.app() : firebase.initializeApp({
+  apiKey:"AIzaSyC650BBAj_y7bObsIA5KpMQkLDNg4FEtmw",
+  authDomain:"ohoi-kyoza.firebaseapp.com",
+  databaseURL:"https://ohoi-kyoza-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"ohoi-kyoza",
+  storageBucket:"ohoi-kyoza.firebasestorage.app",
+  messagingSenderId:"311350815436",
+  appId:"1:311350815436:web:5638717dc207f286e5b069"
+});
+const db = firebase.database();
+
+let allMenus = []; // { fbKey, ...data }
+
+// Category mapping — แปลงชื่อผิดๆ ให้ตรง
+const CAT_MAP = {
+  'ก๋วยเตี๋ยว':'noodle','เส้น':'noodle','noodles':'noodle','ราเม็ง':'noodle',
+  'เกี๊ยวซ่า':'gyoza','gyozas':'gyoza',
+  'ข้าว':'rice','rices':'rice',
+  'ซุป':'soup','soups':'soup',
+  'ของทานเล่น':'snack','snacks':'snack','ของว่าง':'snack',
+  'ไต้หวัน':'taiwan','taiwanese':'taiwan','taiwanese snack':'taiwan',
+  'สลัด':'salad','salads':'salad',
+  'แช่แข็ง':'frozen','frozen food':'frozen',
+  'เครื่องดื่ม':'drink','drinks':'drink','beverage':'drink',
+  'ของหวาน':'dessert','desserts':'dessert','sweets':'dessert',
+  'เซ็ต':'set','sets':'set','combo':'set','คอมโบ':'set',
+};
+
+function normalizeCategory(cat) {
+  if (!cat) return 'other';
+  const low = String(cat).toLowerCase().trim();
+  return CAT_MAP[low] || CAT_MAP[cat] || low;
+}
+
+// LOG
+function log(msg, type='info') {
+  const box = document.getElementById('log-box');
+  const cls = {ok:'log-ok',warn:'log-warn',err:'log-err',info:'log-info'}[type]||'log-info';
+  box.innerHTML += `<span class="${cls}">${new Date().toLocaleTimeString('th')} — ${msg}</span><br>`;
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog() {
+  document.getElementById('log-box').innerHTML = '<span class="log-info">► Log cleared</span><br>';
+}
+
+// BADGE
+function badge(text, type) { return `<span class="badge ${type}">${text}</span>`; }
+
+// LOAD MENUS FROM FIREBASE
+function loadMenus() {
+  db.ref('.info/connected').on('value', snap => {
+    document.getElementById('fb-conn').innerHTML = snap.val()
+      ? badge('✅ เชื่อมต่อแล้ว','ok')
+      : badge('❌ ไม่ได้เชื่อมต่อ','err');
+  });
+
+  db.ref('menus').on('value', snap => {
+    allMenus = [];
+    if (snap.exists()) {
+      snap.forEach(c => allMenus.push({ fbKey: c.key, ...c.val() }));
+    }
+    const avail   = allMenus.filter(m => m.available !== false).length;
+    const unavail = allMenus.filter(m => m.available === false).length;
+
+    document.getElementById('fb-total').innerHTML   = badge(`${allMenus.length} รายการ`, allMenus.length > 0 ? 'ok' : 'warn');
+    document.getElementById('fb-avail').innerHTML   = badge(`${avail} รายการ`, 'ok');
+    document.getElementById('fb-unavail').innerHTML = badge(`${unavail} รายการ`, unavail > 0 ? 'warn' : 'ok');
+
+    log(`โหลดเมนูจาก Firebase: ${allMenus.length} รายการ (พร้อมขาย ${avail}, ปิด ${unavail})`, 'info');
+    renderPreview();
+  });
+}
+
+// RENDER PREVIEW TABLE
+function renderPreview() {
+  const area = document.getElementById('preview-area');
+  if (!allMenus.length) {
+    area.innerHTML = '<div class="empty">⚠️ ไม่พบเมนูใน Firebase</div>';
+    return;
+  }
+  const rows = allMenus.map(m => {
+    const avail = m.available !== false;
+    return `<tr>
+      <td>${m.name_th || m.name || '—'}</td>
+      <td><span class="cat-pill">${m.category || '—'}</span></td>
+      <td>${m.price || 0} ฿</td>
+      <td class="${avail ? 'avail-ok' : 'avail-no'}">${avail ? '✅' : '❌'}</td>
+    </tr>`;
+  }).join('');
+  area.innerHTML = `
+    <table class="preview-table">
+      <thead><tr><th>ชื่อ</th><th>Category</th><th>ราคา</th><th>พร้อมขาย</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// FIX 1: SET available = true FOR ALL
+async function fixAvailableAll() {
+  if (!allMenus.length) { log('ไม่พบเมนู — รอโหลดก่อน', 'warn'); return; }
+  const btn = document.getElementById('btn-fix-all');
+  btn.disabled = true;
+  const pw = document.getElementById('progress-wrap');
+  const pf = document.getElementById('progress-fill');
+  const pt = document.getElementById('progress-text');
+  pw.style.display = 'block';
+
+  log(`เริ่มตั้งค่า available=true ให้ ${allMenus.length} รายการ...`, 'info');
+  let done = 0;
+  for (const m of allMenus) {
+    try {
+      await db.ref(`menus/${m.fbKey}/available`).set(true);
+      done++;
+      pf.style.width = `${(done/allMenus.length)*100}%`;
+      pt.textContent = `${done} / ${allMenus.length}`;
+      log(`✅ ${m.name_th || m.name}`, 'ok');
+    } catch(e) {
+      log(`❌ ${m.name_th || m.name}: ${e.message}`, 'err');
+    }
+  }
+  log(`🎉 เสร็จ! เปิดขายแล้ว ${done} รายการ`, 'ok');
+  btn.disabled = false;
+}
+
+// FIX 2: NORMALIZE CATEGORY NAMES
+async function fixCategories() {
+  if (!allMenus.length) { log('ไม่พบเมนู — รอโหลดก่อน', 'warn'); return; }
+  const btn = document.getElementById('btn-fix-cat');
+  btn.disabled = true;
+
+  const needsFix = allMenus.filter(m => {
+    const norm = normalizeCategory(m.category);
+    return norm !== m.category;
+  });
+
+  if (!needsFix.length) {
+    log('✅ ชื่อ Category ถูกต้องทั้งหมด ไม่ต้องแก้', 'ok');
+    btn.disabled = false;
+    return;
+  }
+
+  log(`พบ ${needsFix.length} รายการที่ชื่อ category ไม่ตรง กำลังแก้...`, 'warn');
+  let done = 0;
+  for (const m of needsFix) {
+    const norm = normalizeCategory(m.category);
+    try {
+      await db.ref(`menus/${m.fbKey}/category`).set(norm);
+      log(`✅ ${m.name_th || m.name}: "${m.category}" → "${norm}"`, 'ok');
+      done++;
+    } catch(e) {
+      log(`❌ ${m.name_th || m.name}: ${e.message}`, 'err');
+    }
+  }
+  log(`🎉 แก้ category เสร็จ ${done} รายการ`, 'ok');
+  btn.disabled = false;
+}
+
+window.addEventListener('DOMContentLoaded', loadMenus);
+</script>
+</body>
+</html>
