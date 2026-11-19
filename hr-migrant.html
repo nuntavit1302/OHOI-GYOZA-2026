@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ohoi Kyoza — ระบบ HR & แรงงานต่างด้าว</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK (แบบเดียวกับระบบเดิมของร้าน) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --crimson:#9B2226;--crimson-light:#AE2012;--crimson-soft:rgba(155,34,38,0.08);
+      --gold:#D4A373;--gold-light:#E9C496;--jade:#588157;
+      --warm-white:#FDF6EC;--cream:#F5EBDC;--ink:#3D2B1F;--ink-muted:#9B8B7F;
+      --purple:#6B5B95;--orange:#E67E22;
+    }
+    body{font-family:'Noto Sans Thai',sans-serif;background:var(--warm-white);color:var(--ink);min-height:100vh;padding-bottom:50px;}
+
+    /* HEADER */
+    .header{background:linear-gradient(160deg,var(--crimson),#5A1216);padding:24px 20px;color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.15);}
+    .header-inner{max-width:1050px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+    .logo{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:#E9C496;letter-spacing:2px;}
+    .logo span{color:#FFF8F0;font-weight:400;font-style:italic;}
+    .subtitle{color:rgba(255,248,240,0.8);font-size:0.82rem;margin-top:2px;}
+    .btn-back{background:rgba(255,255,255,0.15);color:#fff;text-decoration:none;padding:8px 16px;border-radius:12px;font-size:0.85rem;font-weight:600;border:1px solid rgba(255,255,255,0.25);transition:0.3s;}
+    .btn-back:hover{background:var(--gold);color:var(--crimson);}
+
+    /* CONTAINER */
+    .wrap{max-width:1050px;margin:26px auto;padding:0 18px;}
+
+    /* STATS CARDS */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+    .stat-card{background:#fff;border-radius:18px;padding:18px;border:1px solid rgba(155,34,38,0.08);box-shadow:0 4px 14px rgba(155,34,38,0.06);border-top:4px solid var(--crimson);}
+    .stat-card:nth-child(2){border-top-color:var(--jade);}
+    .stat-card:nth-child(3){border-top-color:var(--orange);}
+    .stat-card:nth-child(4){border-top-color:#DC2626;}
+    .stat-label{font-size:0.78rem;color:var(--ink-muted);font-weight:600;}
+    .stat-num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;margin-top:4px;color:var(--ink);}
+    .stat-card:nth-child(2) .stat-num{color:var(--jade);}
+    .stat-card:nth-child(3) .stat-num{color:var(--orange);}
+    .stat-card:nth-child(4) .stat-num{color:#DC2626;}
+
+    /* ACTION BAR */
+    .action-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+    .page-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--crimson);}
+    .page-desc{font-size:0.82rem;color:var(--ink-muted);}
+    .btn-add{background:linear-gradient(135deg,var(--crimson),#AE2012);color:#fff;border:none;padding:12px 20px;border-radius:14px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(155,34,38,0.25);transition:0.3s;}
+    .btn-add:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(155,34,38,0.35);}
+
+    /* TABLE CARD */
+    .card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid rgba(155,34,38,0.08);box-shadow:0 4px 16px rgba(155,34,38,0.06);}
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;text-align:left;font-size:0.85rem;}
+    th{background:var(--cream);color:var(--ink);padding:14px 16px;font-weight:700;font-size:0.78rem;border-bottom:2px solid rgba(155,34,38,0.1);white-space:nowrap;}
+    td{padding:14px 16px;border-bottom:1px solid var(--cream);vertical-align:top;}
+    tr:hover td{background:#FFFDF9;}
+
+    /* BADGES */
+    .nat-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.72rem;font-weight:700;}
+    .nat-mm{background:#F3E8FF;color:#6B21A8;}
+    .nat-th{background:#DBEAFE;color:#1E40AF;}
+    .exp-box{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
+    .exp-date{font-size:0.78rem;font-weight:600;color:var(--ink);}
+    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:0.7rem;font-weight:700;width:fit-content;}
+    .b-ok{background:#DCFCE7;color:#166534;}
+    .b-warn{background:#FEF3C7;color:#92400E;}
+    .b-urgent{background:#FEE2E2;color:#991B1B;}
+    .b-expired{background:#DC2626;color:#fff;}
+
+    .btn-sm{padding:6px 12px;border-radius:8px;border:none;font-family:inherit;font-size:0.76rem;font-weight:600;cursor:pointer;margin-right:4px;}
+    .btn-edit{background:var(--cream);color:var(--ink);}
+    .btn-edit:hover{background:var(--gold-light);}
+    .btn-del{background:#FEE2E2;color:#991B1B;}
+    .btn-del:hover{background:#FCA5A5;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(30,16,8,0.6);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;overflow-y:auto;}
+    .modal-overlay.show{display:flex;}
+    .modal{background:#fff;border-radius:22px;max-width:650px;width:100%;padding:26px;box-shadow:0 15px 40px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--cream);padding-bottom:12px;margin-bottom:18px;}
+    .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:var(--crimson);}
+    .btn-close{background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--ink-muted);}
+
+    .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+    .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+    .form-group{margin-bottom:12px;}
+    label{display:block;font-size:0.78rem;font-weight:600;color:var(--ink);margin-bottom:5px;}
+    input,select{width:100%;padding:10px 12px;border:1.5px solid #E5D5C5;border-radius:10px;font-family:inherit;font-size:0.88rem;background:#fff;color:var(--ink);}
+    input:focus,select:focus{outline:none;border-color:var(--crimson);}
+
+    .migrant-box{background:var(--warm-white);border:1.5px dashed var(--gold);border-radius:14px;padding:16px;margin:14px 0;}
+    .migrant-box-title{font-size:0.88rem;font-weight:700;color:var(--crimson);margin-bottom:12px;}
+
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid var(--cream);}
+    .btn-cancel{background:var(--cream);color:var(--ink);border:none;padding:10px 18px;border-radius:10px;font-family:inherit;font-weight:600;cursor:pointer;}
+    .btn-save{background:var(--crimson);color:#fff;border:none;padding:10px 22px;border-radius:10px;font-family:inherit;font-weight:700;cursor:pointer;}
+
+    @media(max-width:768px){
+      .stats-grid{grid-template-columns:repeat(2,1fr);}
+      .form-grid-2,.form-grid-3{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="logo">Ohoi <span>Kyoza</span></div>
+      <div class="subtitle">🪪 ระบบ HR & จัดการเอกสารแรงงานต่างด้าว (Firebase Cloud)</div>
+    </div>
+    <a href="index.html" class="btn-back">← กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">พนักงานทั้งหมด</div>
+      <div class="stat-num" id="stat-total">0 คน</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">เอกสารปกติ (> 60 วัน)</div>
+      <div class="stat-num" id="stat-normal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ใกล้หมดอายุ (≤ 60 วัน)</div>
+      <div class="stat-num" id="stat-warning">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">เร่งด่วน / หมดอายุ (≤ 15 วัน)</div>
+      <div class="stat-num" id="stat-urgent">0</div>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <div>
+      <div class="page-title">ทะเบียนพนักงาน & วันหมดอายุเอกสาร</div>
+      <div class="page-desc">ติดตามรายงานตัว 90 วัน, Work Permit, Visa, Passport และการแจ้งเข้า-ออกงาน</div>
+    </div>
+    <button class="btn-add" onclick="openModal()">+ เพิ่มพนักงาน / เอกสาร</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ชื่อ-สกุล / ตำแหน่ง</th>
+            <th>สัญชาติ / ค่าจ้าง</th>
+            <th>รายงานตัว 90 วัน (ตม.)</th>
+            <th>ใบอนุญาตทำงาน (Work Permit)</th>
+            <th>วีซ่า (Visa) / Passport</th>
+            <th>สถานะแจ้งการจ้างงาน</th>
+            <th style="text-align:center;">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="employee-list">
+          <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted);">⏳ กำลังเชื่อมต่อ Firebase...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="hr-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">เพิ่มข้อมูลพนักงานและเอกสาร</div>
+      <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+
+    <form id="hr-form">
+      <input type="hidden" id="emp-id">
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>ชื่อ-สกุล หรือชื่อเล่น *</label>
+          <input type="text" id="emp-name" required placeholder="เช่น นายอ่อง (Aung)">
+        </div>
+        <div class="form-group">
+          <label>ตำแหน่งงาน *</label>
+          <select id="emp-role">
+            <option value="พนักงานครัว / ปั้นเกี๊ยว">พนักงานครัว / ปั้นเกี๊ยว</option>
+            <option value="พนักงานเสิร์ฟ / หน้าร้าน">พนักงานเสิร์ฟ / หน้าร้าน</option>
+            <option value="พนักงานล้างจาน / ทำความสะอาด">พนักงานล้างจาน / ทำความสะอาด</option>
+            <option value="ผู้จัดการร้าน">ผู้จัดการร้าน</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>สัญชาติ *</label>
+          <select id="emp-nationality" onchange="toggleMigrantFields()">
+            <option value="MM">🇲🇲 เมียนมา (Myanmar)</option>
+            <option value="TH">🇹🇭 ไทย (Thai)</option>
+            <option value="LA">🇱🇦 ลาว (Laos)</option>
+            <option value="KH">🇰🇭 กัมพูชา (Cambodia)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ประเภทค่าจ้าง</label>
+          <select id="emp-wage-type">
+            <option value="รายวัน">รายวัน (บาท/วัน)</option>
+            <option value="รายเดือน">รายเดือน (บาท/เดือน)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>อัตราค่าจ้าง (บาท) *</label>
+          <input type="number" id="emp-wage" required placeholder="เช่น 400 หรือ 12000">
+        </div>
+      </div>
+
+      <!-- เฉพาะแรงงานต่างด้าว -->
+      <div class="migrant-box" id="migrant-section">
+        <div class="migrant-box-title">📋 ข้อมูลเอกสารแรงงานต่างด้าว & กำหนดต่ออายุ</div>
+        
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>เลขที่ Passport / CI</label>
+            <input type="text" id="doc-passport-no" placeholder="เช่น MC123456">
+          </div>
+          <div class="form-group">
+            <label>วันหมดอายุ Passport</label>
+            <input type="date" id="doc-passport-exp">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>วันหมดอายุ ใบอนุญาตทำงาน (Work Permit)</label>
+            <input type="date" id="doc-wp-exp">
+          </div>
+          <div class="form-group">
+            <label>วันหมดอายุ วีซ่า (Visa)</label>
+            <input type="date" id="doc-visa-exp">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>วันครบกำหนด รายงานตัว 90 วัน (ครั้งถัดไป)</label>
+            <input type="date" id="doc-90days-exp">
+          </div>
+          <div class="form-group">
+            <label>สถานะการแจ้งเข้าทำงาน / ตม.30</label>
+            <select id="doc-compliance-status">
+              <option value="✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย">✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย</option>
+              <option value="⏳ รอแจ้งเข้าทำงาน (ภายใน 15 วัน)">⏳ รอแจ้งเข้าทำงาน (ภายใน 15 วัน)</option>
+              <option value="⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)">⚠️ รอแจ้งที่พัก ตม.30 (ภายใน 24 ชม.)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label>ลิงก์รูปถ่ายเอกสาร (Google Drive / Line Album)</label>
+          <input type="url" id="doc-drive-link" placeholder="https://drive.google.com/...">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn-save">💾 บันทึกข้อมูลขึ้น Firebase</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ===== FIREBASE CONFIG (ของร้าน Ohoi Kyoza) =====
+const _app = firebase.apps.length ? firebase.app() : firebase.initializeApp({
+  apiKey:"AIzaSyC650BBAj_y7bObsIA5KpMQkLDNg4FEtmw",
+  authDomain:"ohoi-kyoza.firebaseapp.com",
+  databaseURL:"https://ohoi-kyoza-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"ohoi-kyoza",
+  storageBucket:"ohoi-kyoza.firebasestorage.app",
+  messagingSenderId:"311350815436",
+  appId:"1:311350815436:web:5638717dc207f286e5b069"
+});
+const db = firebase.database();
+const empRef = db.ref('employees');
+
+let employeesMap = {};
+
+// คำนวณจำนวนวันที่เหลือ
+function getDaysRemaining(dateString) {
+  if (!dateString) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expDate = new Date(dateString);
+  return Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+}
+
+// แสดงป้ายสถานะวันหมดอายุ
+function formatExpiryBadge(dateString, label = "") {
+  if (!dateString) return `<span style="color:var(--ink-muted);font-size:0.75rem;">- ไม่ระบุ -</span>`;
+  
+  const days = getDaysRemaining(dateString);
+  let cls = "b-ok";
+  let text = `เหลือ ${days} วัน`;
+
+  if (days < 0) {
+    cls = "b-expired";
+    text = `หมดอายุแล้ว (${Math.abs(days)} วัน)`;
+  } else if (days <= 15) {
+    cls = "b-urgent";
+    text = `ด่วน! เหลือ ${days} วัน`;
+  } else if (days <= 60) {
+    cls = "b-warn";
+    text = `ใกล้หมด (${days} วัน)`;
+  }
+
+  return `
+    <div class="exp-box">
+      <span class="exp-date">${label ? label + ': ' : ''}${dateString}</span>
+      <span class="badge ${cls}">${text}</span>
+    </div>
+  `;
+}
+
+// โหลดข้อมูลแบบ Real-time จาก Firebase Realtime Database
+empRef.on('value', (snapshot) => {
+  employeesMap = snapshot.val() || {};
+  const list = Object.values(employeesMap);
+
+  let normalCount = 0;
+  let warnCount = 0;
+  let urgentCount = 0;
+
+  list.forEach(emp => {
+    if (emp.nationality !== 'TH') {
+      const dates = [emp.exp90Days, emp.expWorkPermit, emp.expVisa, emp.expPassport];
+      dates.forEach(d => {
+        if (d) {
+          const rem = getDaysRemaining(d);
+          if (rem <= 15) urgentCount++;
+          else if (rem <= 60) warnCount++;
+          else normalCount++;
+        }
+      });
+    }
+  });
+
+  document.getElementById('stat-total').textContent = `${list.length} คน`;
+  document.getElementById('stat-normal').textContent = normalCount;
+  document.getElementById('stat-warning').textContent = warnCount;
+  document.getElementById('stat-urgent').textContent = urgentCount;
+
+  renderTable(list);
+}, (err) => {
+  document.getElementById('employee-list').innerHTML = `<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">❌ เชื่อมต่อ Firebase ไม่สำเร็จ: ${err.message}</td></tr>`;
+});
+
+// แสดงตาราง
+function renderTable(list) {
+  const tbody = document.getElementById('employee-list');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:35px;color:var(--ink-muted);">ยังไม่มีข้อมูลพนักงาน กดปุ่ม <strong>"+ เพิ่มพนักงาน / เอกสาร"</strong> ด้านบนเพื่อเริ่มต้น</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(emp => {
+    const isThai = emp.nationality === 'TH';
+    const natHtml = isThai 
+      ? `<span class="nat-badge nat-th">🇹🇭 ไทย</span>`
+      : `<span class="nat-badge nat-mm">🇲🇲 ${emp.nationality}</span>`;
+
+    return `
+      <tr>
+        <td>
+          <strong>${emp.name}</strong><br>
+          <span style="font-size:0.75rem;color:var(--ink-muted);">${emp.role}</span>
+          ${emp.driveLink ? `<br><a href="${emp.driveLink}" target="_blank" style="font-size:0.74rem;color:var(--crimson);font-weight:600;">📁 เปิดดูรูปเอกสาร</a>` : ''}
+        </td>
+        <td>
+          ${natHtml}<br>
+          <span style="font-size:0.78rem;font-weight:600;">${Number(emp.wage || 0).toLocaleString()} บ.</span>
+          <span style="font-size:0.72rem;color:var(--ink-muted);">(${emp.wageType})</span>
+        </td>
+        <td>${isThai ? '-' : formatExpiryBadge(emp.exp90Days)}</td>
+        <td>${isThai ? '-' : formatExpiryBadge(emp.expWorkPermit)}</td>
+        <td>
+          ${isThai ? '-' : `
+            ${formatExpiryBadge(emp.expVisa, 'Visa')}
+            ${formatExpiryBadge(emp.expPassport, 'PP')}
+          `}
+        </td>
+        <td>
+          <span style="font-size:0.78rem;font-weight:600;">${isThai ? 'พนักงานไทย' : (emp.complianceStatus || '-')}</span>
+        </td>
+        <td style="text-align:center;white-space:nowrap;">
+          <button class="btn-sm btn-edit" onclick="editEmployee('${emp.id}')">✏️ แก้ไข</button>
+          <button class="btn-sm btn-del" onclick="deleteEmployee('${emp.id}', '${emp.name}')">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// บันทึกข้อมูลขึ้น Firebase
+document.getElementById('hr-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const existingId = document.getElementById('emp-id').value;
+  const id = existingId || ('emp_' + Date.now());
+
+  const payload = {
+    id: id,
+    name: document.getElementById('emp-name').value.trim(),
+    role: document.getElementById('emp-role').value,
+    nationality: document.getElementById('emp-nationality').value,
+    wageType: document.getElementById('emp-wage-type').value,
+    wage: Number(document.getElementById('emp-wage').value),
+    passportNo: document.getElementById('doc-passport-no').value.trim(),
+    expPassport: document.getElementById('doc-passport-exp').value,
+    expWorkPermit: document.getElementById('doc-wp-exp').value,
+    expVisa: document.getElementById('doc-visa-exp').value,
+    exp90Days: document.getElementById('doc-90days-exp').value,
+    complianceStatus: document.getElementById('doc-compliance-status').value,
+    driveLink: document.getElementById('doc-drive-link').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    await db.ref(`employees/${id}`).set(payload);
+    closeModal();
+  } catch (err) {
+    alert('❌ บันทึกไม่สำเร็จ: ' + err.message);
+  }
+});
+
+// ฟังก์ชันจัดการ Modal
+function openModal() {
+  document.getElementById('hr-form').reset();
+  document.getElementById('emp-id').value = '';
+  document.getElementById('modal-title').textContent = 'เพิ่มข้อมูลพนักงานและเอกสาร';
+  toggleMigrantFields();
+  document.getElementById('hr-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('hr-modal').classList.remove('show');
+}
+
+function toggleMigrantFields() {
+  const nat = document.getElementById('emp-nationality').value;
+  document.getElementById('migrant-section').style.display = (nat === 'TH') ? 'none' : 'block';
+}
+
+function editEmployee(id) {
+  const emp = employeesMap[id];
+  if (!emp) return;
+
+  document.getElementById('emp-id').value = emp.id;
+  document.getElementById('emp-name').value = emp.name || '';
+  document.getElementById('emp-role').value = emp.role || 'พนักงานครัว / ปั้นเกี๊ยว';
+  document.getElementById('emp-nationality').value = emp.nationality || 'MM';
+  document.getElementById('emp-wage-type').value = emp.wageType || 'รายวัน';
+  document.getElementById('emp-wage').value = emp.wage || '';
+  document.getElementById('doc-passport-no').value = emp.passportNo || '';
+  document.getElementById('doc-passport-exp').value = emp.expPassport || '';
+  document.getElementById('doc-wp-exp').value = emp.expWorkPermit || '';
+  document.getElementById('doc-visa-exp').value = emp.expVisa || '';
+  document.getElementById('doc-90days-exp').value = emp.exp90Days || '';
+  document.getElementById('doc-compliance-status').value = emp.complianceStatus || '✅ แจ้งเข้าทำงาน + ตม.30 เรียบร้อย';
+  document.getElementById('doc-drive-link').value = emp.driveLink || '';
+
+  document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล: ' + emp.name;
+  toggleMigrantFields();
+  document.getElementById('hr-modal').classList.add('show');
+}
+
+async function deleteEmployee(id, name) {
+  if (confirm(`ยืนยันการลบข้อมูลพนักงาน "${name}" ออกจาก Firebase?`)) {
+    try {
+      await db.ref(`employees/${id}`).remove();
+    } catch (err) {
+      alert('❌ ลบไม่สำเร็จ: ' + err.message);
+    }
+  }
+}
+</script>
+
+</body>
+</html>
